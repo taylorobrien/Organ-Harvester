@@ -1,5 +1,7 @@
 var P2Game = {};
 
+var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'game');
+
 //this.state2 = 'A';
 var organ = 0;
 var policecoming = false;
@@ -7,6 +9,9 @@ var alarmon = false;
 var timeon = false;
 var timeleft = 60;
 var timer;
+var playmusic = true;
+var sound;
+var alarmsound;
 
 P2Game.StateA = function (game) {
 
@@ -32,6 +37,9 @@ P2Game.StateA = function (game) {
     this.alarmgroup;
     this.sprite
     this.alarmset = false;
+    this.alarmsound2;
+    this.stabsound;
+    this.playalarm = false;
 
 
 
@@ -42,6 +50,12 @@ P2Game.StateA = function (game) {
 P2Game.StateA.prototype = {
 
     preload: function () {
+	this.load.audio('song',['assets/BeforeTheEnd.mp3',
+'assets/BeforeTheEnd.ogg']);
+	this.load.audio('stabsound',['assets/stab.mp3',
+'assets/stab.ogg']);
+	this.load.audio('alarmsound',['assets/alarms.mp3',
+'assets/alarms.ogg']);
 	this.load.spritesheet('littleboy','assets/boy-AD.png', 270,400,2);
         this.load.spritesheet('ninja', 'assets/ninja-sprite.png', 42.5,
 81, 15);
@@ -63,10 +77,14 @@ null, Phaser.Tilemap.TILED_JSON);
 
     create: function () {
 
-
-    	timer = this.game.time.create(false);
+	this.stabsound = this.game.add.audio('stabsound');
+    	
+	timer = this.game.time.create(false);
 
     	timer.loop(1000, this.minussecond, this);
+
+   	sound = game.add.audio('song');
+	sound.play();
 
 	this.bg = game.add.tileSprite(0, 0, 800, 600, 'background');
         //this.game.stage.backgroundColor = '#806000';
@@ -152,10 +170,18 @@ this.game.world.randomY-20, 'alarm');
 
     },
 
+    playAlarm: function(){
+	var alarmsound2 = game.add.audio('alarmsound');
+    	alarmsound2.play();
+	this.playalarm = true;
+
+   },
+
     killgrandpa: function () {
 	if (this.jumpButton.isDown && this.deadgrandpa == false){
 	this.grandpa.animations.play('dead');
 	this.deadgrandpa = true;
+    	this.stabsound.play();
 	organ ++;}
 
 
@@ -169,6 +195,9 @@ this.game.world.randomY-20, 'alarm');
 
 
     cameraShake: function() {
+	if(this.playalarm == false){
+	    	this.playAlarm();
+}
 	this.game.world.setBounds(-20, -20, this.game.width+20,
 this.game.height+2);
         var min = -20;
@@ -188,6 +217,7 @@ this.game.height+2);
 	if (this.jumpButton.isDown && this.deadboy == false){
 	this.littleboy.animations.play('dead');
 	this.deadboy = true;
+    	this.stabsound.play();
 	organ = organ + 5;}
 
     },
@@ -202,6 +232,9 @@ this.game.height+2);
     this.game.physics.arcade.collide(this.alarmgroup, this.layer);
     this.game.physics.arcade.collide(this.layer, this.player);
 
+    if (timeleft <= 0){
+        this.state.start('StateC');
+}
     this.player.body.velocity.x = 0;
     this.player.body.velocity.y = 0;
 
@@ -327,6 +360,7 @@ P2Game.StateB = function (game) {
     this.deadgrandpa = false;
     this.deadboy = false;
     this.alarmset = false;
+    this.stabsound;
 
 
     this.result = 'Move with cursors. Hit an object to change State';
@@ -336,6 +370,14 @@ P2Game.StateB = function (game) {
 P2Game.StateB.prototype = {
 
      create: function () {
+	
+	alarmsound = game.add.audio('alarmsound');
+
+   	sound = game.add.audio('song');
+
+    	sound.play();
+
+    	this.stabsound = this.game.add.audio('stabsound');
 
 	timer = this.game.time.create(false);
 
@@ -361,14 +403,14 @@ P2Game.StateB.prototype = {
     	this.door2.scale.set(.1,.1);
         this.game.physics.arcade.enable(this.door2);	
 	
-	this.grandpa = game.add.sprite(5,100,'grandpa');
+	this.grandpa = game.add.sprite(40,50,'grandpa');
 	this.grandpa.scale.set(.15,.15);
         this.game.physics.arcade.enable(this.grandpa);	
     	this.grandpa.animations.add('alive', [0], 1, true);
     	this.grandpa.animations.add('dead', [1], 1, true);
 	this.grandpa.animations.play('alive');
 
-	this.littleboy = game.add.sprite(525,130,'littleboy');
+	this.littleboy = game.add.sprite(475,100,'littleboy');
 	this.littleboy.scale.set(.15,.15);
         this.game.physics.arcade.enable(this.littleboy);
     	this.littleboy.animations.add('alive', [0], 1, true);
@@ -414,6 +456,7 @@ this.game.world.randomY-20, 'alarm');
 	if (this.jumpButton.isDown && this.deadgrandpa == false){
 	this.grandpa.animations.play('dead');
 	this.deadgrandpa = true;
+    	this.stabsound.play();
 	organ ++;}
 
 
@@ -431,12 +474,14 @@ this.game.height+2);
 	this.alarmset = true;
 	timeon = true;
 	alarmon = true;
+    	alarmsound.play();
     },
 
     killboy: function () {
 	if (this.jumpButton.isDown && this.deadboy == false){
 	this.littleboy.animations.play('dead');
 	this.deadboy = true;
+    	this.stabsound.play();
 	organ  = organ + 5;}
 
     },
@@ -460,6 +505,11 @@ this.game.height+2);
     },
 
     update: function () {
+
+    if (timeleft <= 0){
+        this.state.start('StateC');
+}
+
 
     this.game.physics.arcade.collide(this.layer, this.player);
 
@@ -579,109 +629,25 @@ P2Game.StateC.prototype = {
 
     create: function () {
 
-	this.bg = game.add.tileSprite(0, 0, 800, 600, 'background');
-        //this.game.stage.backgroundColor = '#806000';
-
-	this.door = game.add.sprite(0, 500, 'door');
-    	this.door.scale.set(.25,.25);
-        this.game.physics.arcade.enable(this.door);	
-
-        this.player = this.add.sprite(10, 500, 'ninja');
-        this.game.physics.arcade.enable(this.player);
-     	this.player.animations.add('left', [5,6,7,8,9,10], 6, true);
-    //player.animations.add('turn', [4], 20, true);
-    	this.player.animations.add('right', [12,13,14,15], 4, true);
-    	this.player.animations.add('idle', [11], 1, true);
-	this.player.body.collideWorldBounds = true;
-    	
-
-
-        this.cursors = this.input.keyboard.createCursorKeys();
-
+	this.game.stage.backgroundColor = '#00FFFF';
+	
+	if(organ > 0 && timeleft > 0){
+	
+	var style3 = {font: "30px Arial", fill:"#DC143C"};
+	var scoringstuff = "Good job! You made it out alive and got " + organ + " organs!";
+ 	var winstatement = game.add.text(50,200,scoringstuff,style3);
+	}
+	else{
+	var style3 = {font: "30px Arial", fill:"#DC143C"};
+	var scoringstuff = "At least you tried? Refresh to play again!";
+ 	var winstatement = game.add.text(50,200,scoringstuff,style3);
+	}
 
     },
 
 
-    gotoStateA: function () {
-
-        this.state.start('StateA');
-
-    },
-
-    gotoStateB: function () {
-
-        this.state.start('StateB');
-
-    },
-
+    
     update: function () {
-
-    this.player.body.velocity.x = 0;
-    this.player.body.velocity.y = 0;
-    this.game.physics.arcade.collide(this.door, this.player,
-this.gotoStateA,null, this);
-
-
-if (this.cursors.left.isDown)
-    {
-        this.player.body.velocity.x = -100;
-
-        if (this.facing != 'left')
-        {
-            this.player.animations.play('left');
-            this.facing = 'left';
-        }
-    }
-else if (this.cursors.down.isDown)
-    {
-        this.player.body.velocity.y = 100;
-
-        if (this.facing != 'idle')
-        {
-            this.player.animations.play('idle');
-            this.facing = 'idle';
-        }
-    }
-else if (this.cursors.up.isDown)
-    {
-        this.player.body.velocity.y = -100;
-
-        if (this.facing != 'idle')
-        {
-            this.player.animations.play('idle');
-            this.facing = 'idle';
-        }
-    }
-    else if (this.cursors.right.isDown)
-    {
-        this.player.body.velocity.x = 100;
-	        if (this.facing != 'right')
-        {
-            this.player.animations.play('right');
-            this.facing = 'right';
-        }
-
-
-    }
-     else
-    {
-        if (this.facing != 'idle')
-        {
-            this.player.animations.stop();
-
-            if (this.facing == 'left')
-            {
-                this.player.frame = 0;
-            }
-            else
-            {
-                this.player.frame = 5;
-            }
-
-            this.facing = 'idle';
-        }
-    }
-
 
 
     },
@@ -689,30 +655,18 @@ else if (this.cursors.up.isDown)
 
     render: function () {
 
-        if (this.changeTimer)
-        {
-            this.game.debug.text('Changing in: ' +
-game.time.events.duration, 32, 32);
-        }
-        else
-        {
-            this.game.debug.text(this.result, 32, 32);
-        }
-
-        this.game.debug.text("State C", 32, 560);
-
     }
 
 };
 
-var game = new Phaser.Game(800, 600, Phaser.CANVAS, 'phaser-example');
 
 game.state.add('StateA', P2Game.StateA);
 game.state.add('StateB', P2Game.StateB);
 game.state.add('StateC', P2Game.StateC);
 
 game.state.start('StateA');
-
+//http://www.newgrounds.com/audio/listen/610280
+//http://soundbible.com/944-Stab.html
 //http://www.stickergenius.com/shop/emergency-exit-door-graphic/
 //http://img.hisupplier.com/var/userImages/2010-08/20/chinadortek_224915946_s.jpg
 //http://ec.pond5.com/s3/000679790_prevstill.jpeg
