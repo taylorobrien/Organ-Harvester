@@ -2,6 +2,11 @@ var P2Game = {};
 
 //this.state2 = 'A';
 var organ = 0;
+var policecoming = false;
+var alarmon = false;
+var timeon = false;
+var timeleft = 60;
+var timer;
 
 P2Game.StateA = function (game) {
 
@@ -29,6 +34,7 @@ P2Game.StateA = function (game) {
     this.alarmset = false;
 
 
+
     this.result = 'Move with cursors. Hit an object to change State';
 
 };
@@ -48,6 +54,7 @@ Phaser.Tilemap.TILED_JSON);
  	this.load.tilemap('hospital-stageB', 'assets/hospital-stageB.json',
 null, Phaser.Tilemap.TILED_JSON);
 	this.load.image('alarm', 'assets/alarm.png');
+	this.load.image('exitdoor', 'assets/exitdoor.png');
 
 
 	this.load.image('hosp2-1', 'assets/hosp2-1.png');
@@ -55,6 +62,11 @@ null, Phaser.Tilemap.TILED_JSON);
     },
 
     create: function () {
+
+
+    	timer = this.game.time.create(false);
+
+    	timer.loop(1000, this.minussecond, this);
 
 	this.bg = game.add.tileSprite(0, 0, 800, 600, 'background');
         //this.game.stage.backgroundColor = '#806000';
@@ -72,7 +84,7 @@ null, Phaser.Tilemap.TILED_JSON);
     	this.door.scale.set(.18,.18);
         this.game.physics.arcade.enable(this.door);	
 
-	this.door2 = game.add.sprite(550, 520, 'door');
+	this.door2 = game.add.sprite(1000, 520, 'door');
     	this.door2.scale.set(.18,.18);
         this.game.physics.arcade.enable(this.door2);	
 	
@@ -105,17 +117,16 @@ null, Phaser.Tilemap.TILED_JSON);
 
 
 	this.alarmgroup = game.add.group();
-	this.alarmgroup.scale.set(.3,.3);
+	//this.alarmgroup.scale.set(1,1);
     	this.alarmgroup.enableBody = true;
     	this.alarmgroup.physicsBodyType = Phaser.Physics.ARCADE;
-	//this.alarmgroup.body.collideWorldBounds = true;
 
 
 
     	for (var i = 0; i < 6; i++)
     	{
-        this.sprite = this.alarmgroup.create(this.game.world.randomX *
-3, this.game.world.randomY * 3, 'alarm');
+        this.sprite = this.alarmgroup.create(this.game.world.randomX-20,
+this.game.world.randomY-20, 'alarm');
         this.game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
     this.sprite.body.velocity.x = -100;
     this.sprite.body.bounce.set(1);
@@ -149,6 +160,13 @@ null, Phaser.Tilemap.TILED_JSON);
 
 
     },
+    
+    minussecond: function(){
+	timeleft --;
+
+	},
+
+
 
     cameraShake: function() {
 	this.game.world.setBounds(-20, -20, this.game.width+20,
@@ -159,7 +177,10 @@ this.game.height+2);
 + min;
         this.game.camera.y+= Math.floor(Math.random() * (max - min + 1))
 + min;
+
 	this.alarmset = true;
+	alarmon = true;
+	timeon = true;
     },
 
 
@@ -167,7 +188,7 @@ this.game.height+2);
 	if (this.jumpButton.isDown && this.deadboy == false){
 	this.littleboy.animations.play('dead');
 	this.deadboy = true;
-	organ ++;}
+	organ = organ + 5;}
 
     },
 
@@ -177,6 +198,7 @@ this.game.height+2);
     },
 
     update: function () {
+    this.game.world.wrap(this.sprite, 0, true);
     this.game.physics.arcade.collide(this.alarmgroup, this.layer);
     this.game.physics.arcade.collide(this.layer, this.player);
 
@@ -198,7 +220,12 @@ this.killgrandpa,null, this);
     this.game.physics.arcade.overlap(this.littleboy, this.player,
 this.killboy,null, this);
 
+
 if(this.alarmset == true){
+	this.cameraShake();
+	timer.start();
+}
+if(this.alarmon == true){
 	this.cameraShake();
 }
 
@@ -262,14 +289,9 @@ else if (this.cursors.up.isDown)
 
     render: function () {
 
-        if (this.changeTimer)
+        if (timeon)
         {
-            this.game.debug.text('Changing in: ' +
-game.time.events.duration, 32, 32);
-        }
-        else
-        {
-            this.game.debug.text(this.result, 32, 32);
+            this.game.debug.text(timeleft, 80,50);
         }
 
         this.game.debug.text("State A", 32, 560);
@@ -304,6 +326,7 @@ P2Game.StateB = function (game) {
     this.littleboy;
     this.deadgrandpa = false;
     this.deadboy = false;
+    this.alarmset = false;
 
 
     this.result = 'Move with cursors. Hit an object to change State';
@@ -313,6 +336,10 @@ P2Game.StateB = function (game) {
 P2Game.StateB.prototype = {
 
      create: function () {
+
+	timer = this.game.time.create(false);
+
+    	timer.loop(1000, this.minussecond, this);
 
 	this.bg = game.add.tileSprite(0, 0, 800, 600, 'background');
         //this.game.stage.backgroundColor = '#806000';
@@ -326,12 +353,12 @@ P2Game.StateB.prototype = {
 
 	//this.game.physics.p2.convertTilemap(this.map, this.layer);
 
-	this.door = game.add.sprite(-100, -100, 'door');
+	this.door = game.add.sprite(700, 20, 'door');
     	this.door.scale.set(.18,.18);
         this.game.physics.arcade.enable(this.door);	
 
-	this.door2 = game.add.sprite(730, 0, 'door');
-    	this.door2.scale.set(.18,.18);
+	this.door2 = game.add.sprite(300, 385, 'exitdoor');
+    	this.door2.scale.set(.1,.1);
         this.game.physics.arcade.enable(this.door2);	
 	
 	this.grandpa = game.add.sprite(5,100,'grandpa');
@@ -359,6 +386,23 @@ P2Game.StateB.prototype = {
     	this.player.animations.add('swordright', [3,4], 2, true);
 	this.player.body.collideWorldBounds = true;
     	
+	this.alarmgroup = game.add.group();
+	//this.alarmgroup.scale.set(.3,.3);
+    	this.alarmgroup.enableBody = true;
+    	this.alarmgroup.physicsBodyType = Phaser.Physics.ARCADE;
+	//this.alarmgroup.body.collideWorldBounds = true;
+
+
+
+    	for (var i = 0; i < 6; i++)
+    	{
+        this.sprite = this.alarmgroup.create(this.game.world.randomX-20,
+this.game.world.randomY-20, 'alarm');
+        this.game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
+    this.sprite.body.velocity.x = -100;
+    this.sprite.body.bounce.set(1);
+
+    }
 
 
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -375,11 +419,25 @@ P2Game.StateB.prototype = {
 
     },
 
+    cameraShake: function() {
+	this.game.world.setBounds(-20, -20, this.game.width+20,
+this.game.height+2);
+        var min = -20;
+        var max = 20;
+        this.game.camera.x+= Math.floor(Math.random() * (max - min + 1))
++ min;
+        this.game.camera.y+= Math.floor(Math.random() * (max - min + 1))
++ min;
+	this.alarmset = true;
+	timeon = true;
+	alarmon = true;
+    },
+
     killboy: function () {
 	if (this.jumpButton.isDown && this.deadboy == false){
 	this.littleboy.animations.play('dead');
 	this.deadboy = true;
-	organ ++;}
+	organ  = organ + 5;}
 
     },
 
@@ -388,6 +446,12 @@ P2Game.StateB.prototype = {
         this.state.start('StateA');
 
     },
+
+
+    minussecond: function(){
+	timeleft --;
+
+	},
 
     gotoStateC: function () {
 
@@ -401,18 +465,32 @@ P2Game.StateB.prototype = {
 
     this.player.body.velocity.x = 0;
     this.player.body.velocity.y = 0;
+	
+    this.game.physics.arcade.overlap(this.alarmgroup, this.player,
+this.cameraShake,null, this);
 
     this.game.physics.arcade.collide(this.door, this.player,
-this.gotoStateB,null, this);
+this.gotoStateA,null, this);
 
     this.game.physics.arcade.collide(this.door2, this.player,
-this.gotoStateA,null, this);
+this.gotoStateC,null, this);
 
     this.game.physics.arcade.overlap(this.grandpa, this.player,
 this.killgrandpa,null, this);
 
     this.game.physics.arcade.overlap(this.littleboy, this.player,
 this.killboy,null, this);
+
+    this.game.physics.arcade.collide(this.alarmgroup, this.layer);
+
+if(this.alarmset == true){
+	this.cameraShake();
+}
+
+if(alarmon == true){
+	this.cameraShake();
+	timer.start();
+}
 
 if (this.jumpButton.isDown){
 	this.player.animations.play('swordleft');
@@ -472,17 +550,12 @@ else if (this.cursors.up.isDown)
 
     render: function () {
 
-        if (this.changeTimer)
+        if (timeon)
         {
-            this.game.debug.text('Changing in: ' +
-game.time.events.duration, 32, 32);
-        }
-        else
-        {
-            this.game.debug.text(this.result, 32, 32);
+            this.game.debug.text(timeleft, 80,50);
         }
 
-        this.game.debug.text("State B", 32, 560);
+        this.game.debug.text("State A", 32, 560);
 
         this.game.debug.text("organs " + organ, 600, 32);
 
@@ -640,10 +713,11 @@ game.state.add('StateC', P2Game.StateC);
 
 game.state.start('StateA');
 
-
+//http://www.stickergenius.com/shop/emergency-exit-door-graphic/
 //http://img.hisupplier.com/var/userImages/2010-08/20/chinadortek_224915946_s.jpg
 //http://ec.pond5.com/s3/000679790_prevstill.jpeg
 //http://www.wpclipart.com/cartoon/people/kids/kid_cartoons_2/child_smile_and_wave.png
 //http://previews.123rf.com/images/vipdesignusa/vipdesignusa1205/vipdesignusa120500089/13659759-Grandpa-sits-in-a-wheelchair--Stock-Vector-cartoon-old-man.jpg
 //http://spritedatabase.net/files/snes/2207/Sprite/KnifeArmy.png
 //http://previews.123rf.com/images/vipdesignusa/vipdesignusa1205/vipdesignusa120500089/13659759-Grandpa-sits-in-a-wheelchair--Stock-Vector-cartoon-old-man.jpg
+
